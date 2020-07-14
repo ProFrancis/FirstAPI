@@ -19,11 +19,16 @@ app.get('/', function(req,res){
 })
 
 app.get('/country/:name', function(req,res){
+  const array = []
+  
   data.map(country => {
-    if(req.params.name == country.name){
+    if(req.params.name.toUpperCase() == country.name.toUpperCase() && array.length == 0)
       array.push(country)
-    }
   })
+
+  if(array.length == 0) return res.status(404).send("STATUS 404 => COUNTRY NOT FOUND")
+
+  res.send(array)
   res.status(200)
 })
 
