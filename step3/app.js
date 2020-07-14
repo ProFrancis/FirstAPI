@@ -2,16 +2,11 @@ const express = require('express')
 const app = express()
 const fs = require('fs')
 
-// const bodyParser = require('body-parser');
-// app.use(bodyParser.json()); // support json encoded bodies
-// app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
-
 app.use(express.json()) // for parsing application/json
 app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 
-// VARIABLES 
+// API DATA
 var data = getDataApi()
-var array = []
 
 app.get('/', function(req,res){
   res.send('Hello')
@@ -20,57 +15,52 @@ app.get('/', function(req,res){
 
 app.get('/country/:name', function(req,res){
   const array = []
-  
   data.map(country => {
-    if(req.params.name.toUpperCase() == country.name.toUpperCase() && array.length == 0)
+    if(req.params.name.toUpperCase() == country.name.toUpperCase())
       array.push(country)
   })
-
-  if(array.length == 0) return res.status(404).send("STATUS 404 => COUNTRY NOT FOUND")
-
-  res.send(array)
-  res.status(200)
+  checkArray(array, req.params.name, res)
+  res.status(200).send(array)
 })
 
 app.get('/regions/:regionName', function(req, res){
+  const array = []
   data.map(country => {
-    if(req.params.regionName.toUpperCase() == country.region.toUpperCase()){
+    if(req.params.regionName.toUpperCase() == country.region.toUpperCase())
       array.push(country.name)
-    }
   })
-  res.send(array)
-  res.status(200)
+  checkArray(array, req.params.regionName, res)
+  res.status(200).send(array)
 })
 
 app.get('/subregion/:subregionName', function(req, res){
+  const array = []
   data.map(country => {
     if(req.params.subregionName.toUpperCase() == country.subregion.toUpperCase()){
       array.push(country.name)
     }
   })
-  res.send(array)
-  res.status(200)
+  checkArray(array, req.params.subregionName, res)
+  res.status(200).send(array)
 })
 
 app.get('/currencies/:currency', function(req, res){
+  const array = []
   data.map(country => {
     country.currencies.map(currency => {
-      if(req.params.currency === currency.code)
-      array.push(country.name)
+      if(req.params.currency == currency.name) array.push(country.name)
     })
   })
-
-  const uniqueSet = new Set(array)
-  const backToArray = [...uniqueSet]
-
-  res.send(backToArray)
-  res.status(200)
+  checkArray(array, req.params.currency, res)
+  res.status(200).send(array)
 })
 
 app.put('/countries/:countryName', function(req, res){
+  let checkParams = false
   data.forEach(country => {
     Object.keys(req.body).forEach(keysBody => {
       if(req.params.countryName.toUpperCase() == country.name.toUpperCase()){
+        checkParams = true
         Object.keys(country).forEach(countrykeys => {
           if(keysBody == countrykeys){
            country[keysBody] = req.body[keysBody]
@@ -79,33 +69,42 @@ app.put('/countries/:countryName', function(req, res){
       }
     }) 
   });
+  if(!checkParams) return res.status(404).send("COUNTRY " + req.params.countryName + " NOT FOUND IN FILE JSON!")
   const newDataApi = stringIfyJson(data)
   writeFile(newDataApi)
-  res.send()
-  res.status(200)
+  res.status(200).send(newDataApi)
 })
 
 app.delete('/countries/:countryName', function(req, res){
+  const array = []
+  let checkParams = false
   for(let i = 0; i < data.length; i++){
     array.push(data[i])
-    if(data[i].name.toUpperCase() == req.params.countryName.toUpperCase()){
+    if(req.params.countryName.toUpperCase() == data[i].name.toUpperCase()){
+      checkParams = true
       array.splice(i, 1)
     }
   }
-  const newDataApi = stringIfyJson(data)
+  if(!checkParams) return res.status(404).send("CANNOT FIND " + req.params.countryName + " IN FILE JSON IS DELETED!")
+  const newDataApi = stringIfyJson(array)
   writeFile(newDataApi)
-  res.send()
-  res.status(200)
+  res.status(200).send(req.params.countryName + " IS DELETE IN FILE JSON NOW" )
 })
 
 app.post('/countries/:countryName', function(req, res){
   const newCountry = req.body
+  data.map(country => {
+    if(country.name.toUpperCase() == req.body.name.toUpperCase()){
+      return res.status(404).send("this country " + req.body.name +  " already exists!")
+    }else if(req.body.name == ""){
+      return res.status(404).send(" CANNOT CREAT COUNTRY WITH VALUE NAME EMPTY")
+    }
+  })
   data.push(newCountry)
   const dataTried = trieArrayByName(data)
   const newDataApi = stringIfyJson(dataTried)
   writeFile(newDataApi)
-  res.send()
-  res.status(200)
+  res.status(200).send(req.body)
 })
 
 app.use(function(req, res) {
@@ -132,7 +131,7 @@ function writeFile(data){
     if (err) {
       console.log('Error writing file', err)
     } else {
-      console.log('Successfully wrote file')
+      console.log('Successfully write file')
     }
   })
 }
@@ -147,4 +146,8 @@ function getDataApi(){
   })
   let data = JSON.parse(contentFile)
   return data
+}
+
+function checkArray(array, params, res, req){
+  if(array.length == 0) return res.status(404).send("STATUS 404 => " + params + " NOT FOUND IN DATA API.")
 }
