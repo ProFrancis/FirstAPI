@@ -5,32 +5,31 @@ const fs = require('fs')
 // app.use(bodyParser.json()); // support json encoded bodies
 // app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-app.use(express.urlencoded({ extended: true })) // support encoded bodies
+app.use(express.json()) // for parsing application/json
+app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 
 // VARIABLES 
 var data = getDataApi()
-var find = false 
 var array = []
 
 app.get('/', function(req,res){
   res.send('Hello')
+  res.status(200)
 })
 
 app.get('/country/:name', function(req,res){
-  const countryName = req.params.name
-  data.map(item => {
-    if(countryName == item.name){
-      find = true
-      array.push(item)
+  data.map(country => {
+    if(req.params.name == country.name){
+      array.push(country)
     }
   })
+  res.status(200)
 })
 
-
 app.get('/regions/:regionName', function(req, res){
-  data.map(val => {
-    if(req.params.regionName.toUpperCase() == val.region.toUpperCase()){
-      array.push(val.name)
+  data.map(country => {
+    if(req.params.regionName.toUpperCase() == country.region.toUpperCase()){
+      array.push(country.name)
     }
   })
   res.send(array)
@@ -38,9 +37,9 @@ app.get('/regions/:regionName', function(req, res){
 })
 
 app.get('/subregion/:subregionName', function(req, res){
-  data.map(val => {
-    if(req.params.subregionName.toUpperCase() == val.subregion.toUpperCase()){
-      array.push(val.name)
+  data.map(country => {
+    if(req.params.subregionName.toUpperCase() == country.subregion.toUpperCase()){
+      array.push(country.name)
     }
   })
   res.send(array)
@@ -64,11 +63,11 @@ app.get('/currencies/:currency', function(req, res){
 
 app.put('/countries/:countryName', function(req, res){
   data.forEach(country => {
-    Object.keys(req.body).forEach(allKeys => {
-      if(req.params.countryName.toLowerCase() == country.name.toLowerCase()){
+    Object.keys(req.body).forEach(keysBody => {
+      if(req.params.countryName.toUpperCase() == country.name.toUpperCase()){
         Object.keys(country).forEach(countrykeys => {
-          if(allKeys == countrykeys){
-           country[allKeys] = req.body[allKeys]
+          if(keysBody == countrykeys){
+           country[keysBody] = req.body[keysBody]
           }
         })
       }
@@ -77,22 +76,30 @@ app.put('/countries/:countryName', function(req, res){
   const newDataApi = stringIfyJson(data)
   writeFile(newDataApi)
   res.send()
+  res.status(200)
 })
 
 app.delete('/countries/:countryName', function(req, res){
   for(let i = 0; i < data.length; i++){
     array.push(data[i])
-    if(data[i].name.toLowerCase() == req.params.countryName.toLowerCase()){
+    if(data[i].name.toUpperCase() == req.params.countryName.toUpperCase()){
       array.splice(i, 1)
     }
   }
   const newDataApi = stringIfyJson(data)
   writeFile(newDataApi)
   res.send()
+  res.status(200)
 })
 
-app.post('/countries/:countryName', function(req, res ){
-
+app.post('/countries/:countryName', function(req, res){
+  const newCountry = req.body
+  data.push(newCountry)
+  const dataTried = [...data].sort((a,b) => a.name.localeCompare(b.name))
+  const newDataApi = stringIfyJson(dataTried)
+  writeFile(newDataApi)
+  res.send()
+  res.status(200)
 })
 
 app.listen(8000, () => {
