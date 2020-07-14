@@ -95,7 +95,7 @@ app.delete('/countries/:countryName', function(req, res){
 app.post('/countries/:countryName', function(req, res){
   const newCountry = req.body
   data.push(newCountry)
-  const dataTried = [...data].sort((a,b) => a.name.localeCompare(b.name))
+  const dataTried = trieArrayByName(data)
   const newDataApi = stringIfyJson(dataTried)
   writeFile(newDataApi)
   res.send()
@@ -105,6 +105,11 @@ app.post('/countries/:countryName', function(req, res){
 app.listen(8000, () => {
   console.log('the serve turn on localhost 8000 ! ')
 })
+
+function trieArrayByName(array){
+  const arrayTried = [...array].sort((a,b) => a.name.localeCompare(b.name))
+  return arrayTried
+}
 
 function stringIfyJson(obj){
   const data = JSON.stringify(obj)
