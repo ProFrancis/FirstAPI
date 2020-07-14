@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express()
 const fs = require('fs')
+
 // const bodyParser = require('body-parser');
 // app.use(bodyParser.json()); // support json encoded bodies
 // app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
@@ -102,6 +103,11 @@ app.post('/countries/:countryName', function(req, res){
   res.status(200)
 })
 
+app.use(function(req, res) {
+  res.type('text/plain')
+  res.status(400).send('404 PAGE NOT FOUND');
+});
+
 app.listen(8000, () => {
   console.log('the serve turn on localhost 8000 ! ')
 })
@@ -127,7 +133,13 @@ function writeFile(data){
 }
 
 function getDataApi(){
-  const contentFile = fs.readFileSync('country.json', 'utf-8')
+  const contentFile = fs.readFileSync('country.json', 'utf-8', function(err){
+    if(err){
+      console.log(err)
+    }else {
+      console.log(' SUCCESS READ FILE! ')
+    }
+  })
   let data = JSON.parse(contentFile)
   return data
 }
